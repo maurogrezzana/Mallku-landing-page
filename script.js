@@ -167,3 +167,86 @@ function showNotification(message, type = 'info') {
     close.addEventListener('click', removeNotification);
     setTimeout(removeNotification, 4000);
 }
+// Tour carousel
+const carousels = document.querySelectorAll('[data-carousel]');
+
+carousels.forEach(carousel => {
+    const track = carousel.querySelector('[data-carousel-track]');
+    if (!track) {
+        return;
+    }
+
+    const slides = Array.from(track.children);
+    if (!slides.length) {
+        return;
+    }
+
+    const prevButton = carousel.querySelector('[data-carousel-prev]');
+    const nextButton = carousel.querySelector('[data-carousel-next]');
+    const dotsContainer = carousel.querySelector('[data-carousel-dots]');
+    const dots = dotsContainer ? Array.from(dotsContainer.children) : [];
+
+    let currentIndex = slides.findIndex(slide => slide.classList.contains('active'));
+    if (currentIndex < 0) {
+        currentIndex = 0;
+    }
+
+    const moveTo = index => {
+        if (!slides.length) {
+            return;
+        }
+
+        currentIndex = (index + slides.length) % slides.length;
+        const slideWidth = carousel.getBoundingClientRect().width;
+        track.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
+
+        slides.forEach((slide, idx) => {
+            const isActive = idx === currentIndex;
+            slide.classList.toggle('active', isActive);
+            slide.setAttribute('aria-hidden', (!isActive).toString());
+        });
+
+        dots.forEach((dot, idx) => {
+            const isActive = idx === currentIndex;
+            dot.classList.toggle('active', isActive);
+            dot.setAttribute('aria-pressed', isActive.toString());
+            dot.setAttribute('aria-selected', isActive.toString());
+        });
+    };
+
+    const showPrevious = () => moveTo(currentIndex - 1);
+    const showNext = () => moveTo(currentIndex + 1);
+
+    if (prevButton) {
+        prevButton.addEventListener('click', showPrevious);
+    }
+
+    if (nextButton) {
+        nextButton.addEventListener('click', showNext);
+    }
+
+    dots.forEach((dot, idx) => {
+        dot.addEventListener('click', () => moveTo(idx));
+        dot.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                moveTo(idx);
+            }
+        });
+    });
+
+    carousel.addEventListener('keydown', event => {
+        if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            showPrevious();
+        }
+
+        if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            showNext();
+        }
+    });
+
+    window.addEventListener('resize', () => moveTo(currentIndex));
+    moveTo(currentIndex);
+});
